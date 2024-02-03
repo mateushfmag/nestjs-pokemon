@@ -1,19 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { GetPokemonResponse } from './dto/get-pokemon.dto';
 import { Pokemon, Ability } from './entities';
+import { HttpRequest } from '../utils';
 
 @Injectable()
 export class PokemonService {
-  private baseUrl = 'https://pokeapi.co/api/v2';
-
-  private request<T>(path: string, init?: RequestInit) {
-    return fetch(`${this.baseUrl}/${path}`, init).then((response) =>
-      response.json(),
-    ) as Promise<T>;
-  }
+  constructor(private readonly httpRequest: HttpRequest) {}
 
   async findOne(id: string): Promise<GetPokemonResponse> {
-    const result = await this.request<Pokemon>(`pokemon/${id}`);
+    const result = await this.httpRequest.request<Pokemon>(`pokemon/${id}`);
 
     const abilities = await this.getAbilities(result.moves);
 
@@ -34,7 +29,7 @@ export class PokemonService {
     const promises = abilities.map((ability) => {
       const regex = /move\/(\d+)/;
       const abilityId = ability.move.url.match(regex)?.[1];
-      return this.request<Ability>(`move/${abilityId}`);
+      return this.httpRequest.request<Ability>(`move/${abilityId}`);
     });
     return Promise.all(promises);
   }
