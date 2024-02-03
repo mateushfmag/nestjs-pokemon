@@ -1,20 +1,44 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PokemonController } from './pokemon.controller';
 import { PokemonService } from './pokemon.service';
+import { HttpRequest } from '../utils';
+import { PokemonController } from './pokemon.controller';
+
+jest.mock('../utils', () => ({
+  HttpRequest: jest.fn(),
+}));
 
 describe('PokemonController', () => {
-  let controller: PokemonController;
+  const httpRequest = new HttpRequest('<baseUrl>');
+  const service = new PokemonService(httpRequest);
+  const controller = new PokemonController(service);
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [PokemonController],
-      providers: [PokemonService],
-    }).compile();
-
-    controller = module.get<PokemonController>(PokemonController);
+    jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  it('should return pokemon data', async () => {
+    jest.spyOn(service, 'findOne').mockResolvedValueOnce({
+      abilities: [
+        {
+          name: 'razor-leaf',
+          power: 80,
+        },
+      ],
+      types: [{ name: 'grass' }],
+      name: 'bulbasaur',
+      image: 'http://bulbasaur-image.com',
+    });
+
+    const result = await controller.findOne('ditto');
+    expect(result).toEqual({
+      abilities: [
+        {
+          name: 'razor-leaf',
+          power: 80,
+        },
+      ],
+      types: [{ name: 'grass' }],
+      name: 'bulbasaur',
+      image: 'http://bulbasaur-image.com',
+    });
   });
 });
